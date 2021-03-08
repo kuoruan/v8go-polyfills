@@ -34,6 +34,6 @@ func Inject(ctx internal.Context, opt ...Option) error {
 		return err
 	}
 
-	_, err = ctx.RunScript(fetchPolyfill, "fetch.js")
+	_, err = ctx.RunScript(fetchPolyfill, "fetch-polyfill.js")
 	return err
 }
