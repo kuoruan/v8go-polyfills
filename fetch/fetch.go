@@ -2,6 +2,7 @@ package fetch
 
 import (
 	_ "embed"
+	"errors"
 
 	"go.kuoruan.net/v8go-polyfills/internal"
 
@@ -13,7 +14,7 @@ var fetchPolyfill string
 
 func Inject(ctx internal.Context, opt ...Option) error {
 	if ctx == nil {
-		panic("ctx is required")
+		return errors.New("ctx is required")
 	}
 
 	f := &fetcher{}
