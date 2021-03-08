@@ -1,18 +1,11 @@
 package polyfills
 
-import "go.kuoruan.net/v8go-polyfills/fetch"
-
-type Polyfill int
-
-const (
-	PolyfillFetch Polyfill = iota + 1
+import (
+	"go.kuoruan.net/v8go-polyfills/fetch"
+	"go.kuoruan.net/v8go-polyfills/internal"
 )
 
-type Option interface {
-	ForPolyfill() Polyfill
-}
-
-func InjectAll(ctx Context, opt ...Option) error {
+func InjectAll(ctx internal.Context, opt ...internal.Option) error {
 	var fetchOpts []fetch.Option
 
 	for _, o := range opt {

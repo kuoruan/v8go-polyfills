@@ -3,11 +3,11 @@ package fetch
 import (
 	"net/http"
 
-	polyfills "go.kuoruan.net/v8go-polyfills"
+	"go.kuoruan.net/v8go-polyfills/internal"
 )
 
 type Option interface {
-	polyfills.Option
+	internal.Option
 
 	apply(ft *fetcher)
 }
@@ -18,8 +18,8 @@ func (f funcOption) apply(ft *fetcher) {
 	f(ft)
 }
 
-func (f funcOption) ForPolyfill() polyfills.Polyfill {
-	return polyfills.PolyfillFetch
+func (f funcOption) Polyfill() internal.Polyfill {
+	return internal.PolyfillFetch
 }
 
 func WithLocalHandler(handler http.Handler) Option {

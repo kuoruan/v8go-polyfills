@@ -3,15 +3,15 @@ package fetch
 import (
 	_ "embed"
 
-	polyfills "go.kuoruan.net/v8go-polyfills"
+	"go.kuoruan.net/v8go-polyfills/internal"
 
 	"rogchap.com/v8go"
 )
 
-//go:embed fetch.js
+//go:embed bundle.js
 var fetchPolyfill string
 
-func Inject(ctx polyfills.Context, opt ...Option) error {
+func Inject(ctx internal.Context, opt ...Option) error {
 	if ctx == nil {
 		panic("ctx is required")
 	}
@@ -26,10 +26,10 @@ func Inject(ctx polyfills.Context, opt ...Option) error {
 	if err != nil {
 		return err
 	}
-	global := ctx.Global()
+	obj := ctx.Global()
 
 	fetchFn, _ := v8go.NewFunctionTemplate(iso, f.goFetchSync)
-	if err := global.Set("_goFetchSync", fetchFn); err != nil {
+	if err := obj.Set("_goFetchSync", fetchFn); err != nil {
 		return err
 	}
 

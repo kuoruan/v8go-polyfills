@@ -1,4 +1,4 @@
-package polyfills
+package internal
 
 import "rogchap.com/v8go"
 

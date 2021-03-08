@@ -21,8 +21,4 @@ class Response {
   }
 }
 
-async function fetch(url, opt = {}) {
-  /* global _goFetchSync */
-  const res = await _goFetchSync(url, JSON.stringify(opt));
-  return new Response(JSON.parse(res));
-}
+module.exports = Response;

@@ -1,0 +1,16 @@
+{
+  "name": "v8go-polyfills",
+  "version": "1.0.0",
+  "repository": "git@github.com:kuoruan/v8go-polyfills.git",
+  "author": "Xingwang Liao <kuoruan@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "core-js-pure": "^3.9.1",
+    "expose-loader": "^2.0.0",
+    "webpack": "^5.24.3",
+    "webpack-cli": "^4.5.0"
+  },
+  "scripts": {
+    "build": "webpack"
+  }
+}
