@@ -103,9 +103,9 @@ func initRequest(reqUrl string, reqInit internal.RequestInit) (*internal.Request
 	}
 
 	if u.IsAbs() {
-		headers.Set("User-Agent", "<local>")
+		headers.Set("User-Agent", UserAgentLocal)
 	} else {
-		headers.Set("User-Agent", "v8go-fetch/0.0")
+		headers.Set("User-Agent", UserAgent())
 	}
 
 	for h, v := range reqInit.Headers {

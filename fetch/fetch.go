@@ -3,8 +3,15 @@ package fetch
 import (
 	_ "embed"
 	"errors"
+	"fmt"
+
+	"go.kuoruan.net/v8go-polyfills/internal"
 
 	"rogchap.com/v8go"
+)
+
+const (
+	UserAgentLocal = "<local>"
 )
 
 //go:embed bundle.js
@@ -34,4 +41,8 @@ func Inject(ctx *v8go.Context, opt ...Option) error {
 
 	_, err = ctx.RunScript(fetchPolyfill, "fetch-polyfill.js")
 	return err
+}
+
+func UserAgent() string {
+	return fmt.Sprintf("v8go-polyfills/%s (v8go/%s)", internal.Version, v8go.Version())
 }
