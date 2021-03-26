@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	UserAgentLocal = "<local>"
+	UserAgentLocal  = "<local>"
+	RemoteAddrLocal = "0.0.0.0"
 )
 
 //go:embed bundle.js

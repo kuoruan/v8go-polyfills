@@ -158,7 +158,6 @@ func fetchHttp(r *internal.Request) (*internal.Response, error) {
 			switch r.Redirect {
 			case internal.RequestRedirectError:
 				return errors.New("redirects are not allowed")
-
 			default:
 				if len(via) >= 10 {
 					return errors.New("stopped after 10 redirects")
@@ -193,6 +192,7 @@ func fetchHandlerFunc(handler http.Handler, r *internal.Request) (*internal.Resp
 	if err != nil {
 		return nil, err
 	}
+	req.RemoteAddr = RemoteAddrLocal
 	req.Header = r.Headers
 
 	rcd := httptest.NewRecorder()
