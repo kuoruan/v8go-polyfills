@@ -2,6 +2,7 @@ package polyfills
 
 import (
 	"go.kuoruan.net/v8go-polyfills/fetch"
+	"go.kuoruan.net/v8go-polyfills/internal"
 
 	"rogchap.com/v8go"
 )
@@ -25,4 +26,8 @@ func InjectAll(ctx *v8go.Context, opt ...PolyfillOption) error {
 	}
 
 	return nil
+}
+
+func Version() string {
+	return internal.Version
 }
