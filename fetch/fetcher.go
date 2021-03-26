@@ -50,8 +50,8 @@ func (f *fetcher) goFetchSync(info *v8go.FunctionCallbackInfo) *v8go.Value {
 				return
 			}
 
-			buf := bytes.NewBufferString(str)
-			if err := json.NewDecoder(buf).Decode(&reqInit); err != nil {
+			reader := strings.NewReader(str)
+			if err := json.NewDecoder(reader).Decode(&reqInit); err != nil {
 				resolver.Reject(wrapError(iso, err))
 				return
 			}
