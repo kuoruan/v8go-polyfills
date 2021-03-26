@@ -2,13 +2,9 @@ package console
 
 import (
 	"io"
-
-	"go.kuoruan.net/v8go-polyfills/internal"
 )
 
 type Option interface {
-	internal.Option
-
 	apply(c *console)
 }
 
@@ -18,8 +14,8 @@ func (f funcOption) apply(c *console) {
 	f(c)
 }
 
-func (f funcOption) Polyfill() internal.Polyfill {
-	return internal.PolyfillConsole
+func (f funcOption) Polyfill() string {
+	return "console"
 }
 
 func WithOutput(output io.Writer) Option {

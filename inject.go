@@ -2,10 +2,15 @@ package polyfills
 
 import (
 	"go.kuoruan.net/v8go-polyfills/fetch"
-	"go.kuoruan.net/v8go-polyfills/internal"
+
+	"rogchap.com/v8go"
 )
 
-func InjectAll(ctx internal.Context, opt ...internal.Option) error {
+type PolyfillOption interface {
+	Polyfill() string
+}
+
+func InjectAll(ctx *v8go.Context, opt ...PolyfillOption) error {
 	var fetchOpts []fetch.Option
 
 	for _, o := range opt {

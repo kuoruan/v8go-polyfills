@@ -4,13 +4,13 @@ import (
 	_ "embed"
 	"errors"
 
-	"go.kuoruan.net/v8go-polyfills/internal"
+	"rogchap.com/v8go"
 )
 
 //go:embed bundle.js
 var urlPolyfill string
 
-func Inject(ctx internal.Context) error {
+func Inject(ctx *v8go.Context) error {
 	if ctx == nil {
 		return errors.New("ctx is required")
 	}

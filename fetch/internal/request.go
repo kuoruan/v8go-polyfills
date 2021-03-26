@@ -1,26 +1,26 @@
 package internal
 
-import "net/http"
-
-type RequestRedirect string
+import (
+	"net/http"
+	"net/url"
+)
 
 const (
-	RequestRedirectError  RequestRedirect = "error"
-	RequestRedirectFollow                 = "follow"
-	RequestRedirectManual                 = "manual"
+	RequestRedirectError  = "error"
+	RequestRedirectFollow = "follow"
+	RequestRedirectManual = "manual"
 )
 
 type RequestInit struct {
 	Body     string            `json:"body"`
 	Headers  map[string]string `json:"headers"`
 	Method   string            `json:"method"`
-	Redirect RequestRedirect   `json:"redirect"`
+	Redirect string            `json:"redirect"`
 }
 
 type Request struct {
 	RequestInit
 
 	Headers http.Header `json:"headers"`
-	URL     string      `json:"url"`
-	IsLocal bool        `json:"-"`
+	URL     *url.URL    `json:"url"`
 }

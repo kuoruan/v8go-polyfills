@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"strings"
 
 	"go.kuoruan.net/v8go-polyfills/fetch/internal"
@@ -18,6 +17,7 @@ import (
 )
 
 type fetcher struct {
+	// Use local handler to handle the absolute path request
 	LocalHandler http.Handler
 }
 
@@ -31,14 +31,14 @@ func (f *fetcher) goFetchSync(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		args := info.Args()
 
 		if len(args) <= 0 {
-			e, _ := v8go.NewValue(iso, "1 argument required, but only 0 present.")
-			resolver.Reject(e)
+			err := errors.New("1 argument required, but only 0 present")
+			resolver.Reject(wrapError(iso, err))
 			return
 		}
 
 		if !args[0].IsString() {
-			e, _ := v8go.NewValue(iso, "first argument should be string.")
-			resolver.Reject(e)
+			err := errors.New("first argument should be string")
+			resolver.Reject(wrapError(iso, err))
 			return
 		}
 
@@ -64,7 +64,7 @@ func (f *fetcher) goFetchSync(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		}
 
 		var res *internal.Response
-		if r.IsLocal {
+		if r.URL.IsAbs() {
 			res, err = fetchHandlerFunc(f.LocalHandler, r)
 		} else {
 			res, err = fetchHttp(r)
@@ -92,7 +92,7 @@ func (f *fetcher) goFetchSync(info *v8go.FunctionCallbackInfo) *v8go.Value {
 }
 
 func initRequest(reqUrl string, reqInit internal.RequestInit) (*internal.Request, error) {
-	u, err := url.Parse(reqUrl)
+	u, err := internal.ParseURL(reqUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -102,21 +102,10 @@ func initRequest(reqUrl string, reqInit internal.RequestInit) (*internal.Request
 		"Connection": []string{"close"},
 	}
 
-	var localURL bool
-	switch u.Scheme {
-	case "http", "https":
-		localURL = false
-
-		headers.Set("User-Agent", "v8go-fetch/0.0")
-	case "":
-		if !strings.HasPrefix(u.Path, "/") {
-			return nil, fmt.Errorf("unsupported relatve path: %s", u.Path)
-		}
-		localURL = true
-
+	if u.IsAbs() {
 		headers.Set("User-Agent", "<local>")
-	default:
-		return nil, fmt.Errorf("unsupported scheme: %s", u.Scheme)
+	} else {
+		headers.Set("User-Agent", "v8go-fetch/0.0")
 	}
 
 	for h, v := range reqInit.Headers {
@@ -125,9 +114,8 @@ func initRequest(reqUrl string, reqInit internal.RequestInit) (*internal.Request
 	}
 
 	req := &internal.Request{
-		URL:     u.String(),
+		URL:     u,
 		Headers: headers,
-		IsLocal: localURL,
 	}
 
 	if reqInit.Method != "" {
@@ -138,9 +126,9 @@ func initRequest(reqUrl string, reqInit internal.RequestInit) (*internal.Request
 
 	req.Body = reqInit.Body
 
-	switch r := strings.ToLower(string(reqInit.Redirect)); r {
+	switch r := strings.ToLower(reqInit.Redirect); r {
 	case "error", "follow", "manual":
-		req.Redirect = internal.RequestRedirect(r)
+		req.Redirect = r
 	case "":
 		req.Redirect = internal.RequestRedirectFollow
 	default:
@@ -156,7 +144,7 @@ func fetchHttp(r *internal.Request) (*internal.Response, error) {
 		body = strings.NewReader(r.Body)
 	}
 
-	req, err := http.NewRequest(r.Method, r.URL, body)
+	req, err := http.NewRequest(r.Method, r.URL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -188,32 +176,30 @@ func fetchHttp(r *internal.Request) (*internal.Response, error) {
 		return nil, err
 	}
 
-	return handleHttpResponse(res, r.URL, redirected)
+	return handleHttpResponse(res, r.URL.String(), redirected)
 }
 
 func fetchHandlerFunc(handler http.Handler, r *internal.Request) (*internal.Response, error) {
 	if handler == nil {
-		return nil, errors.New("no server handler present")
+		return nil, errors.New("fetch: no server handler present")
 	}
-
-	rcd := httptest.NewRecorder()
 
 	var body io.Reader
 	if r.Method != "GET" {
 		body = strings.NewReader(r.Body)
 	}
 
-	req, err := http.NewRequest(r.Method, r.URL, body)
+	req, err := http.NewRequest(r.Method, r.URL.String(), body)
 	if err != nil {
 		return nil, err
 	}
 	req.Header = r.Headers
 
+	rcd := httptest.NewRecorder()
+
 	handler.ServeHTTP(rcd, req)
 
-	result := rcd.Result()
-
-	return handleHttpResponse(result, r.URL, false)
+	return handleHttpResponse(rcd.Result(), r.URL.String(), false)
 }
 
 func handleHttpResponse(res *http.Response, url string, redirected bool) (*internal.Response, error) {
@@ -243,6 +229,6 @@ func handleHttpResponse(res *http.Response, url string, redirected bool) (*inter
 }
 
 func wrapError(iso *v8go.Isolate, err error) *v8go.Value {
-	e, _ := v8go.NewValue(iso, err.Error())
+	e, _ := v8go.NewValue(iso, fmt.Sprintf("fetch: %v", err))
 	return e
 }

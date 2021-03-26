@@ -6,14 +6,16 @@ import (
 	"os"
 
 	"rogchap.com/v8go"
-
-	"go.kuoruan.net/v8go-polyfills/internal"
 )
+
+type console struct {
+	Output io.Writer
+}
 
 /**
 Inject basic console.log support.
 */
-func Inject(ctx internal.Context, opt ...Option) error {
+func Inject(ctx *v8go.Context, opt ...Option) error {
 	c := console{Output: os.Stdout}
 
 	for _, o := range opt {
@@ -47,8 +49,4 @@ func Inject(ctx internal.Context, opt ...Option) error {
 	}
 
 	return nil
-}
-
-type console struct {
-	Output io.Writer
 }
