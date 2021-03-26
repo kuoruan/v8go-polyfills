@@ -11,9 +11,11 @@ module.exports = {
   target: "es2020",
   stats: {
     all: false,
+    assets: true,
+    assetsSort: "size",
     entrypoints: true,
-    chunkGroups: true,
-    timings: true,
     errors: true,
+    timings: true,
+    warnings: true,
   },
 }
