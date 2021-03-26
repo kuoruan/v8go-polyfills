@@ -1,6 +1,7 @@
 package fetch
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -43,7 +44,14 @@ func (f *fetcher) goFetchSync(info *v8go.FunctionCallbackInfo) *v8go.Value {
 
 		var reqInit internal.RequestInit
 		if len(args) > 1 {
-			if err := json.Unmarshal([]byte(args[1].String()), &reqInit); err != nil {
+			str, err := v8go.JSONStringify(ctx, args[1])
+			if err != nil {
+				resolver.Reject(wrapError(iso, err))
+				return
+			}
+
+			buf := bytes.NewBufferString(str)
+			if err := json.NewDecoder(buf).Decode(&reqInit); err != nil {
 				resolver.Reject(wrapError(iso, err))
 				return
 			}
@@ -66,14 +74,18 @@ func (f *fetcher) goFetchSync(info *v8go.FunctionCallbackInfo) *v8go.Value {
 			return
 		}
 
-		resByts, err := json.Marshal(res)
-		if err != nil {
+		var buf bytes.Buffer
+		if err := json.NewEncoder(&buf).Encode(res); err != nil {
 			resolver.Reject(wrapError(iso, err))
 			return
 		}
 
-		resVal, _ := v8go.NewValue(iso, string(resByts))
-		resolver.Resolve(resVal)
+		val, err := v8go.JSONParse(ctx, buf.String())
+		if err != nil {
+			resolver.Reject(wrapError(iso, err))
+			return
+		}
+		resolver.Resolve(val)
 	}()
 
 	return resolver.GetPromise().Value
