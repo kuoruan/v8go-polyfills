@@ -14,10 +14,6 @@ func (f funcOption) apply(c *console) {
 	f(c)
 }
 
-func (f funcOption) Polyfill() string {
-	return "console"
-}
-
 func WithOutput(output io.Writer) Option {
 	return funcOption(func(c *console) {
 		c.Output = output

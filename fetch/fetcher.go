@@ -203,7 +203,7 @@ func fetchHandlerFunc(handler http.Handler, r *internal.Request) (*internal.Resp
 }
 
 func handleHttpResponse(res *http.Response, url string, redirected bool) (*internal.Response, error) {
-	resHeaders := make(map[string]string, 0)
+	resHeaders := make(map[string]string)
 	for k, v := range res.Header {
 		for _, vv := range v {
 			resHeaders[k] = vv

@@ -7,11 +7,7 @@ import (
 	"rogchap.com/v8go"
 )
 
-type PolyfillOption interface {
-	Polyfill() string
-}
-
-func InjectAll(ctx *v8go.Context, opt ...PolyfillOption) error {
+func InjectAll(ctx *v8go.Context, opt ...interface{}) error {
 	var fetchOpts []fetch.Option
 
 	for _, o := range opt {
