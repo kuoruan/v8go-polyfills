@@ -19,8 +19,11 @@ type RequestInit struct {
 }
 
 type Request struct {
-	RequestInit
+	Body     string
+	Method   string
+	Redirect string
 
-	Headers http.Header `json:"headers"`
-	URL     *url.URL    `json:"url"`
+	Header     http.Header
+	URL        *url.URL
+	RemoteAddr string
 }

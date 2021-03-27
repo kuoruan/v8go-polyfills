@@ -8,27 +8,29 @@ import (
 	"rogchap.com/v8go"
 )
 
+type Console interface {
+	GetLogFunctionCallback() v8go.FunctionCallback
+}
+
 type console struct {
 	Output io.Writer
 }
 
-/**
-Inject basic console.log support.
-*/
-func Inject(ctx *v8go.Context, opt ...Option) error {
-	c := console{Output: os.Stdout}
-
-	for _, o := range opt {
-		o.apply(&c)
+func NewConsole(opt ...Option) Console {
+	c := &console{
+		Output: os.Stdout,
 	}
 
-	iso, _ := ctx.Isolate()
-	global := ctx.Global()
+	for _, o := range opt {
+		o.apply(c)
+	}
 
-	console, _ := v8go.NewObjectTemplate(iso)
-	logFn, _ := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
-		args := info.Args()
-		if len(args) > 0 {
+	return c
+}
+
+func (c *console) GetLogFunctionCallback() v8go.FunctionCallback {
+	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
+		if args := info.Args(); len(args) > 0 {
 			inputs := make([]interface{}, len(args))
 			for i, input := range args {
 				inputs[i] = input
@@ -38,15 +40,5 @@ func Inject(ctx *v8go.Context, opt ...Option) error {
 		}
 
 		return nil
-	})
-
-	if err := console.Set("log", logFn); err != nil {
-		return fmt.Errorf("set console.log: %w", err)
 	}
-
-	if err := global.Set("console", console); err != nil {
-		return fmt.Errorf("set console: %w", err)
-	}
-
-	return nil
 }

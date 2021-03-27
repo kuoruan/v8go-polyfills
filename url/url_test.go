@@ -11,7 +11,7 @@ func TestInject(t *testing.T) {
 
 	ctx, _ := v8go.NewContext()
 
-	if err := Inject(ctx); err != nil {
+	if err := InjectTo(ctx); err != nil {
 		t.Errorf("inject url polyfill: %v", err)
 	}
 
