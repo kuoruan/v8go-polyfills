@@ -1,4 +1,4 @@
-import Response from "./Response";
+const Response = require("./Response");
 
 async function fetch(url, opt) {
   /* global _goFetchSync */

@@ -11,7 +11,7 @@ class Response {
 
   text() {
     if (typeof this.body !== "string") {
-      return Promise.reject("response body is not text.")
+      return Promise.reject("response body is not text.");
     }
     return Promise.resolve(this.body);
   }

@@ -1,1 +1,1 @@
-import "expose-loader?exposes=fetch!./fetch"
+require("expose-loader?exposes=fetch!./fetch");

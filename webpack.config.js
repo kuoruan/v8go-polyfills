@@ -1,30 +1,30 @@
-const pkg = require('./package.json')
-const WriteVersionPlugin = require('./write-version-plugin')
+const pkg = require("./package.json");
+const WriteVersionPlugin = require("./write-version-plugin");
 
 module.exports = {
-  mode: 'production',
+  mode: "production",
   entry: {
-    'fetch': './fetch/js/index.js',
-    'url': './url/js/index.js',
+    fetch: "./fetch/js/index.js",
+    url: "./url/js/index.js",
   },
   output: {
     path: __dirname,
-    filename: '[name]/bundle.js',
+    filename: "[name]/bundle.js",
   },
-  target: 'es2020',
+  target: "es2020",
   plugins: [
     new WriteVersionPlugin({
-      path: 'internal/version.txt',
-      content: pkg.version
-    })
+      path: "internal/version.txt",
+      content: pkg.version,
+    }),
   ],
   stats: {
     all: false,
     assets: true,
-    assetsSort: 'size',
+    assetsSort: "size",
     entrypoints: true,
     errors: true,
     timings: true,
     warnings: true,
   },
-}
+};
