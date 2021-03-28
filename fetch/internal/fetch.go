@@ -89,7 +89,7 @@ func handleHttpResponse(res *http.Response, url string, redirected bool) (*Respo
 
 	return &Response{
 		Headers:    resHeaders,
-		Status:     res.StatusCode,
+		Status:     int32(res.StatusCode), // int type is not support by v8go
 		StatusText: res.Status,
 		OK:         res.StatusCode >= 200 && res.StatusCode < 300,
 		Redirected: redirected,
