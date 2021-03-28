@@ -8,14 +8,14 @@ type Option interface {
 	apply(c *console)
 }
 
-type funcOption func(c *console)
+type optionFunc func(c *console)
 
-func (f funcOption) apply(c *console) {
+func (f optionFunc) apply(c *console) {
 	f(c)
 }
 
 func WithOutput(output io.Writer) Option {
-	return funcOption(func(c *console) {
+	return optionFunc(func(c *console) {
 		c.Output = output
 	})
 }
