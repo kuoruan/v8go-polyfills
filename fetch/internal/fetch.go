@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"time"
 )
 
 func FetchHandlerFunc(handler http.Handler, r *Request) (*Response, error) {
@@ -61,7 +62,7 @@ func FetchRemote(r *Request) (*Response, error) {
 			redirected = true
 			return nil
 		},
-		Timeout: 20,
+		Timeout: 20 * time.Second,
 	}
 
 	res, err := client.Do(req)
