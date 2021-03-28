@@ -52,8 +52,6 @@ func (f *fetcher) GetLocalHandler() http.Handler {
 func (f *fetcher) GetFetchFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
-		iso, _ := ctx.Isolate()
-
 		args := info.Args()
 
 		resolver, _ := v8go.NewPromiseResolver(ctx)
@@ -61,13 +59,13 @@ func (f *fetcher) GetFetchFunctionCallback() v8go.FunctionCallback {
 		go func() {
 			if len(args) <= 0 {
 				err := errors.New("1 argument required, but only 0 present")
-				resolver.Reject(wrapError(iso, err))
+				resolver.Reject(newErrorValue(ctx, err))
 				return
 			}
 
 			if !args[0].IsString() {
 				err := errors.New("first argument should be string")
-				resolver.Reject(wrapError(iso, err))
+				resolver.Reject(newErrorValue(ctx, err))
 				return
 			}
 
@@ -75,46 +73,43 @@ func (f *fetcher) GetFetchFunctionCallback() v8go.FunctionCallback {
 			if len(args) > 1 {
 				str, err := v8go.JSONStringify(ctx, args[1])
 				if err != nil {
-					resolver.Reject(wrapError(iso, err))
+					resolver.Reject(newErrorValue(ctx, err))
 					return
 				}
 
 				reader := strings.NewReader(str)
 				if err := json.NewDecoder(reader).Decode(&reqInit); err != nil {
-					resolver.Reject(wrapError(iso, err))
+					resolver.Reject(newErrorValue(ctx, err))
 					return
 				}
 			}
 
 			r, err := initRequest(args[0].String(), reqInit)
 			if err != nil {
-				resolver.Reject(wrapError(iso, err))
+				resolver.Reject(newErrorValue(ctx, err))
 				return
 			}
 
 			var res *internal.Response
-			if r.URL.IsAbs() {
+
+			// do local request
+			if !r.URL.IsAbs() {
 				res, err = internal.FetchHandlerFunc(f.LocalHandler, r)
 			} else {
 				res, err = internal.FetchRemote(r)
 			}
 			if err != nil {
-				resolver.Reject(wrapError(iso, err))
+				resolver.Reject(newErrorValue(ctx, err))
 				return
 			}
 
-			objTmp, err := newResObjTemplate(iso, res)
+			resObj, err := newResponseObject(ctx, res)
 			if err != nil {
-				resolver.Reject(wrapError(iso, err))
-				return
-			}
-			obj, err := objTmp.NewInstance(ctx)
-			if err != nil {
-				resolver.Reject(wrapError(iso, err))
+				resolver.Reject(newErrorValue(ctx, err))
 				return
 			}
 
-			resolver.Resolve(obj)
+			resolver.Resolve(resObj)
 		}()
 
 		return resolver.GetPromise().Value
@@ -136,7 +131,8 @@ func initRequest(reqUrl string, reqInit internal.RequestInit) (*internal.Request
 		},
 	}
 
-	if u.IsAbs() {
+	// url has no scheme, its a local request
+	if !u.IsAbs() {
 		req.Header.Set("User-Agent", UserAgentLocal)
 		req.RemoteAddr = RemoteAddrLocal
 	} else {
@@ -166,8 +162,17 @@ func initRequest(reqUrl string, reqInit internal.RequestInit) (*internal.Request
 	return req, nil
 }
 
-func newResObjTemplate(iso *v8go.Isolate, res *internal.Response) (*v8go.ObjectTemplate, error) {
-	headers, err := v8go.NewObjectTemplate(iso)
+func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object, error) {
+	iso, _ := ctx.Isolate()
+
+	// create a header template,
+	// if v8go supports Map, change this to a Map Object
+	headersTmp, err := v8go.NewObjectTemplate(iso)
+	if err != nil {
+		return nil, err
+	}
+
+	headers, err := headersTmp.NewInstance(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +183,7 @@ func newResObjTemplate(iso *v8go.Isolate, res *internal.Response) (*v8go.ObjectT
 		}
 	}
 
-	textFn, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
+	textFnTmp, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
 		resolver, _ := v8go.NewPromiseResolver(ctx)
 
@@ -193,7 +198,7 @@ func newResObjTemplate(iso *v8go.Isolate, res *internal.Response) (*v8go.ObjectT
 		return nil, err
 	}
 
-	jsonFn, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
+	jsonFnTmp, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
 
 		resolver, _ := v8go.NewPromiseResolver(ctx)
@@ -220,7 +225,24 @@ func newResObjTemplate(iso *v8go.Isolate, res *internal.Response) (*v8go.ObjectT
 		return nil, err
 	}
 
-	for _, e := range []struct {
+	for _, f := range []struct {
+		Name string
+		Tmp  interface{}
+	}{
+		{Name: "text", Tmp: textFnTmp},
+		{Name: "json", Tmp: jsonFnTmp},
+	} {
+		if err := resTmp.Set(f.Name, f.Tmp, v8go.ReadOnly); err != nil {
+			return nil, err
+		}
+	}
+
+	resObj, err := resTmp.NewInstance(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, v := range []struct {
 		Key string
 		Val interface{}
 	}{
@@ -231,18 +253,19 @@ func newResObjTemplate(iso *v8go.Isolate, res *internal.Response) (*v8go.ObjectT
 		{Key: "statusText", Val: res.StatusText},
 		{Key: "url", Val: res.URL},
 		{Key: "body", Val: res.Body},
-		{Key: "text", Val: textFn},
-		{Key: "json", Val: jsonFn},
 	} {
-		if err := resTmp.Set(e.Key, e.Val, v8go.ReadOnly); err != nil {
+		if err := resObj.Set(v.Key, v.Val); err != nil {
 			return nil, err
 		}
 	}
 
-	return resTmp, nil
+	return resObj, nil
 }
 
-func wrapError(iso *v8go.Isolate, err error) *v8go.Value {
+// v8go currently not support reject a *v8go.Object,
+// so we should new *v8go.Value here
+func newErrorValue(ctx *v8go.Context, err error) *v8go.Value {
+	iso, _ := ctx.Isolate()
 	e, _ := v8go.NewValue(iso, fmt.Sprintf("fetch: %v", err))
 	return e
 }
