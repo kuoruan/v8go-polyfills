@@ -222,7 +222,7 @@ func (f *fetcher) fetchRemote(r *internal.Request) (*internal.Response, error) {
 	req.Header = r.Header
 
 	redirected := false
-	client := http.Client{
+	client := &http.Client{
 		Transport: http.DefaultTransport,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			switch r.Redirect {
