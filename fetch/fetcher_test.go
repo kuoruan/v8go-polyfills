@@ -46,7 +46,7 @@ func TestFetchJSON(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json; utf-8")
-		w.Write([]byte(`{"status": true}`))
+		_, _ = w.Write([]byte(`{"status": true}`))
 	}))
 
 	val, err := ctx.RunScript(fmt.Sprintf("fetch('%s').then(res => res.json())", srv.URL), "fetch_json.js")
