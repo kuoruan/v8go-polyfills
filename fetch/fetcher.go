@@ -4,8 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"strings"
+	"time"
 
 	"go.kuoruan.net/v8go-polyfills/fetch/internal"
 	. "go.kuoruan.net/v8go-polyfills/internal"
@@ -14,12 +18,20 @@ import (
 )
 
 const (
-	UserAgentLocal  = "<local>"
-	RemoteAddrLocal = "0.0.0.0"
+	UserAgentLocal = "<local>"
+	AddrLocal      = "0.0.0.0"
 )
 
 var defaultLocalHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
+})
+
+var defaultUserAgentProvider = UserAgentProviderFunc(func(u *url.URL) string {
+	if !u.IsAbs() {
+		return UserAgentLocal
+	}
+
+	return UserAgent()
 })
 
 type Fetcher interface {
@@ -31,11 +43,16 @@ type Fetcher interface {
 type fetcher struct {
 	// Use local handler to handle the absolute path request
 	LocalHandler http.Handler
+
+	UserAgentProvider UserAgentProvider
+	AddrLocal         string
 }
 
 func NewFetcher(opt ...Option) Fetcher {
 	ft := &fetcher{
-		LocalHandler: defaultLocalHandler,
+		LocalHandler:      defaultLocalHandler,
+		UserAgentProvider: defaultUserAgentProvider,
+		AddrLocal:         AddrLocal,
 	}
 
 	for _, o := range opt {
@@ -84,7 +101,7 @@ func (f *fetcher) GetFetchFunctionCallback() v8go.FunctionCallback {
 				}
 			}
 
-			r, err := initRequest(args[0].String(), reqInit)
+			r, err := f.initRequest(args[0].String(), reqInit)
 			if err != nil {
 				resolver.Reject(newErrorValue(ctx, err))
 				return
@@ -94,9 +111,9 @@ func (f *fetcher) GetFetchFunctionCallback() v8go.FunctionCallback {
 
 			// do local request
 			if !r.URL.IsAbs() {
-				res, err = internal.FetchHandlerFunc(f.LocalHandler, r)
+				res, err = f.fetchLocal(r)
 			} else {
-				res, err = internal.FetchRemote(r)
+				res, err = f.fetchRemote(r)
 			}
 			if err != nil {
 				resolver.Reject(newErrorValue(ctx, err))
@@ -116,8 +133,8 @@ func (f *fetcher) GetFetchFunctionCallback() v8go.FunctionCallback {
 	}
 }
 
-func initRequest(reqUrl string, reqInit internal.RequestInit) (*internal.Request, error) {
-	u, err := internal.ParseURL(reqUrl)
+func (f *fetcher) initRequest(reqUrl string, reqInit internal.RequestInit) (*internal.Request, error) {
+	u, err := internal.ParseRequestURL(reqUrl)
 	if err != nil {
 		return nil, err
 	}
@@ -131,12 +148,18 @@ func initRequest(reqUrl string, reqInit internal.RequestInit) (*internal.Request
 		},
 	}
 
+	var ua string
+	if f.UserAgentProvider != nil {
+		ua = f.UserAgentProvider.GetUserAgent(u)
+	} else {
+		ua = defaultUserAgentProvider(u)
+	}
+
+	req.Header.Set("User-Agent", ua)
+
 	// url has no scheme, its a local request
 	if !u.IsAbs() {
-		req.Header.Set("User-Agent", UserAgentLocal)
-		req.RemoteAddr = RemoteAddrLocal
-	} else {
-		req.Header.Set("User-Agent", UserAgent())
+		req.RemoteAddr = f.AddrLocal
 	}
 
 	for h, v := range reqInit.Headers {
@@ -160,6 +183,69 @@ func initRequest(reqUrl string, reqInit internal.RequestInit) (*internal.Request
 	}
 
 	return req, nil
+}
+
+func (f *fetcher) fetchLocal(r *internal.Request) (*internal.Response, error) {
+	if f.LocalHandler == nil {
+		return nil, errors.New("no local handler present")
+	}
+
+	var body io.Reader
+	if r.Method != "GET" {
+		body = strings.NewReader(r.Body)
+	}
+
+	req, err := http.NewRequest(r.Method, r.URL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+	req.RemoteAddr = r.RemoteAddr
+	req.Header = r.Header
+
+	rcd := httptest.NewRecorder()
+
+	f.LocalHandler.ServeHTTP(rcd, req)
+
+	return internal.HandleHttpResponse(rcd.Result(), r.URL.String(), false)
+}
+
+func (f *fetcher) fetchRemote(r *internal.Request) (*internal.Response, error) {
+	var body io.Reader
+	if r.Method != "GET" {
+		body = strings.NewReader(r.Body)
+	}
+
+	req, err := http.NewRequest(r.Method, r.URL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header = r.Header
+
+	redirected := false
+	client := http.Client{
+		Transport: http.DefaultTransport,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			switch r.Redirect {
+			case internal.RequestRedirectError:
+				return errors.New("redirects are not allowed")
+			default:
+				if len(via) >= 10 {
+					return errors.New("stopped after 10 redirects")
+				}
+			}
+
+			redirected = true
+			return nil
+		},
+		Timeout: 20 * time.Second,
+	}
+
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return internal.HandleHttpResponse(res, r.URL.String(), redirected)
 }
 
 func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object, error) {
