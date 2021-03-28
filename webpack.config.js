@@ -4,7 +4,6 @@ const WriteVersionPlugin = require("./write-version-plugin");
 module.exports = {
   mode: "production",
   entry: {
-    fetch: "./fetch/js/index.js",
     url: "./url/js/index.js",
   },
   output: {
