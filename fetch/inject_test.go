@@ -51,25 +51,22 @@ func TestInjectTo(t *testing.T) {
 		t.Errorf("request timeout")
 		return
 	case <-done:
+		stat := pro.State()
+		if stat == v8go.Rejected {
+			fmt.Printf("reject with error: %s\n", pro.Result().String())
+		}
+
 		if pro.State() != v8go.Fulfilled {
 			t.Errorf("should fetch success, but not")
 			return
 		}
 	}
 
-	obj, err := pro.Value.AsObject()
+	obj, err := pro.Result().AsObject()
 	if err != nil {
 		t.Errorf("can't convert fetch result to object, %s", err)
 		return
 	}
-
-	str, err := v8go.JSONStringify(ctx, obj)
-	if err != nil {
-		t.Errorf("can't stringify object: %s", err)
-		return
-	}
-
-	fmt.Println(str)
 
 	ok, err := obj.Get("ok")
 	if err != nil {
