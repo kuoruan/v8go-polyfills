@@ -80,12 +80,6 @@ func (f *fetcher) GetFetchFunctionCallback() v8go.FunctionCallback {
 				return
 			}
 
-			if !args[0].IsString() {
-				err := errors.New("first argument should be string")
-				resolver.Reject(newErrorValue(ctx, err))
-				return
-			}
-
 			var reqInit internal.RequestInit
 			if len(args) > 1 {
 				str, err := v8go.JSONStringify(ctx, args[1])
