@@ -19,7 +19,7 @@ import (
 
 const (
 	UserAgentLocal = "<local>"
-	AddrLocal      = "0.0.0.0"
+	AddrLocal      = "0.0.0.0:0"
 )
 
 var defaultLocalHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
