@@ -26,7 +26,7 @@ func (b *base64) GetAtobFunctionCallback() v8go.FunctionCallback {
 		args := info.Args()
 		ctx := info.Context()
 
-		if len(args) <= 0 || !args[0].IsString() {
+		if len(args) <= 0 {
 			// TODO: v8go can't throw a error now, so we return an empty string
 			return newStringValue(ctx, "")
 		}
@@ -50,7 +50,7 @@ func (b *base64) GetBtoaFunctionCallback() v8go.FunctionCallback {
 		args := info.Args()
 		ctx := info.Context()
 
-		if len(args) <= 0 || !args[0].IsString() {
+		if len(args) <= 0 {
 			return newStringValue(ctx, "")
 		}
 
