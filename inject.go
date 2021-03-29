@@ -1,6 +1,7 @@
 package polyfills
 
 import (
+	"go.kuoruan.net/v8go-polyfills/base64"
 	"go.kuoruan.net/v8go-polyfills/console"
 	"go.kuoruan.net/v8go-polyfills/fetch"
 	"go.kuoruan.net/v8go-polyfills/internal"
@@ -27,6 +28,10 @@ func InjectToGlobalObject(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ..
 	}
 
 	if err := console.InjectTo(iso, global, consoleOpts...); err != nil {
+		return err
+	}
+
+	if err := base64.InjectTo(iso, global); err != nil {
 		return err
 	}
 
