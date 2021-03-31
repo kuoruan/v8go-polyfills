@@ -267,22 +267,9 @@ func (f *fetcher) fetchRemote(r *internal.Request) (*internal.Response, error) {
 func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object, error) {
 	iso, _ := ctx.Isolate()
 
-	// create a header template,
-	// if v8go supports Map, change this to a Map Object
-	headersTmp, err := v8go.NewObjectTemplate(iso)
+	headers, err := newHeadersObject(ctx, res.Header)
 	if err != nil {
 		return nil, err
-	}
-
-	headers, err := headersTmp.NewInstance(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	for k, v := range res.Headers {
-		if err := headers.Set(k, v); err != nil {
-			return nil, err
-		}
 	}
 
 	textFnTmp, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
@@ -362,6 +349,81 @@ func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object,
 	}
 
 	return resObj, nil
+}
+
+func newHeadersObject(ctx *v8go.Context, h http.Header) (*v8go.Object, error) {
+	iso, _ := ctx.Isolate()
+
+	// https://developer.mozilla.org/en-US/docs/Web/API/Headers/get
+	getFnTmp, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
+		args := info.Args()
+		if len(args) <= 0 {
+			// TODO: this should return an error, but v8go not supported now
+			val, _ := v8go.NewValue(iso, "")
+			return val
+		}
+
+		key := http.CanonicalHeaderKey(args[0].String())
+		val, _ := v8go.NewValue(iso, h.Get(key))
+		return val
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// https://developer.mozilla.org/en-US/docs/Web/API/Headers/has
+	hasFnTmp, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
+		args := info.Args()
+		if len(args) <= 0 {
+			val, _ := v8go.NewValue(iso, false)
+			return val
+		}
+		key := http.CanonicalHeaderKey(args[0].String())
+
+		val, _ := v8go.NewValue(iso, h.Get(key) != "")
+		return val
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// create a header template,
+	// TODO: if v8go supports Map in the future, change this to a Map Object
+	headersTmp, err := v8go.NewObjectTemplate(iso)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, f := range []struct {
+		Name string
+		Tmp  interface{}
+	}{
+		{Name: "get", Tmp: getFnTmp},
+		{Name: "has", Tmp: hasFnTmp},
+	} {
+		if err := headersTmp.Set(f.Name, f.Tmp, v8go.ReadOnly); err != nil {
+			return nil, err
+		}
+	}
+
+	headers, err := headersTmp.NewInstance(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range h {
+		var vv string
+		if len(v) > 0 {
+			// get the first element, like http.Header.Get
+			vv = v[0]
+		}
+
+		if err := headers.Set(k, vv); err != nil {
+			return nil, err
+		}
+	}
+
+	return headers, nil
 }
 
 // v8go currently not support reject a *v8go.Object,

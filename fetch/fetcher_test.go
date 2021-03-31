@@ -104,6 +104,45 @@ func TestFetchJSON(t *testing.T) {
 	}
 }
 
+func TestHeaders(t *testing.T) {
+	t.Parallel()
+
+	iso, _ := v8go.NewIsolate()
+
+	ctx, _ := v8go.NewContext(iso)
+
+	obj, err := newHeadersObject(ctx, http.Header{
+		"AA": []string{"aa"},
+		"BB": []string{"bb"},
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	aa, err := obj.Get("AA")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if aa.String() != "aa" {
+		t.Errorf("should be 'aa' but is '%s'", aa.String())
+		return
+	}
+
+	fn, err := obj.Get("get")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	if !fn.IsFunction() {
+		t.Error("should be function")
+		return
+	}
+}
+
 func newV8ContextWithFetch(opt ...Option) (*v8go.Context, error) {
 	iso, _ := v8go.NewIsolate()
 	global, _ := v8go.NewObjectTemplate(iso)
