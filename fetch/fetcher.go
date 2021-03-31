@@ -41,7 +41,7 @@ type Fetcher interface {
 }
 
 type fetcher struct {
-	// Use local handler to handle the absolute path request
+	// Use local handler to handle the relative path (starts with "/") request
 	LocalHandler http.Handler
 
 	UserAgentProvider UserAgentProvider
