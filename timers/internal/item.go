@@ -55,7 +55,7 @@ func (t *Item) Clear() {
 
 func (t *Item) Start() {
 	go func() {
-		defer t.ClearCB(t.ID) // self clear
+		defer t.Clear() // self clear
 
 		for {
 			time.Sleep(time.Duration(t.Delay) * time.Millisecond)
