@@ -70,6 +70,7 @@ func (t *Item) Start() {
 
 			if !t.Interval {
 				t.Done = true
+				break
 			}
 		}
 	}()
