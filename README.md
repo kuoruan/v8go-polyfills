@@ -6,6 +6,18 @@
 go get -u go.kuoruan.net/v8go-polyfills
 ```
 
+## Polyfill List
+
+* base64: `atob` and `btoa`
+
+* console: `console.log`
+
+* fetch: `fetch`
+
+* timers: `setTimeout`, `clearTimeout`, `setInterval` and `clearInterval`
+
+* url: `URL` and `URLSearchParams`
+
 ## Usage
 
 ### fetch polyfill
