@@ -46,7 +46,7 @@ const initNextItemID = 1
 
 func NewTimers() Timers {
 	return &timers{
-		Items:      make(map[int32]*internal.Item, 0),
+		Items:      make(map[int32]*internal.Item),
 		NextItemID: initNextItemID,
 	}
 }
@@ -55,7 +55,7 @@ func (t *timers) GetSetTimeoutFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
 
-		id, err := t.newTimerItem(info.Args(), false)
+		id, err := t.startNewTimer(info.Args(), false)
 		if err != nil {
 			return newInt32Value(ctx, 0)
 		}
@@ -67,9 +67,8 @@ func (t *timers) GetSetTimeoutFunctionCallback() v8go.FunctionCallback {
 func (t *timers) GetSetIntervalFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
-		args := info.Args()
 
-		id, err := t.newTimerItem(args, true)
+		id, err := t.startNewTimer(info.Args(), true)
 		if err != nil {
 			return newInt32Value(ctx, 0)
 		}
@@ -110,7 +109,7 @@ func (t *timers) clear(id int32, interval bool) {
 	}
 }
 
-func (t *timers) newTimerItem(args []*v8go.Value, interval bool) (int32, error) {
+func (t *timers) startNewTimer(args []*v8go.Value, interval bool) (int32, error) {
 	if len(args) <= 0 {
 		return 0, errors.New("1 argument required, but only 0 present")
 	}
@@ -143,7 +142,7 @@ func (t *timers) newTimerItem(args []*v8go.Value, interval bool) (int32, error) 
 		Delay:    delay,
 		Interval: interval,
 		FunctionCB: func() {
-			fn.Call(restArgs...)
+			_, _ = fn.Call(restArgs...)
 		},
 		ClearCB: func(id int32) {
 			delete(t.Items, id)
