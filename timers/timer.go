@@ -42,10 +42,12 @@ type timers struct {
 	NextItemID int32
 }
 
+const initNextItemID = 1
+
 func NewTimers() Timers {
 	return &timers{
 		Items:      make(map[int32]*internal.Item, 0),
-		NextItemID: 1,
+		NextItemID: initNextItemID,
 	}
 }
 
@@ -53,16 +55,12 @@ func (t *timers) GetSetTimeoutFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
 
-		item, err := newTimerItem(info.Args(), t.NextItemID, false)
+		id, err := t.newTimerItem(info.Args(), false)
 		if err != nil {
 			return newInt32Value(ctx, 0)
 		}
 
-		t.NextItemID++
-		t.Items[item.Id] = item
-
-		item.Start()
-		return newInt32Value(ctx, item.Id)
+		return newInt32Value(ctx, id)
 	}
 }
 
@@ -71,16 +69,12 @@ func (t *timers) GetSetIntervalFunctionCallback() v8go.FunctionCallback {
 		ctx := info.Context()
 		args := info.Args()
 
-		item, err := newTimerItem(args, t.NextItemID, true)
+		id, err := t.newTimerItem(args, true)
 		if err != nil {
 			return newInt32Value(ctx, 0)
 		}
 
-		t.NextItemID++
-		t.Items[item.Id] = item
-
-		item.Start()
-		return newInt32Value(ctx, item.Id)
+		return newInt32Value(ctx, id)
 	}
 }
 
@@ -107,25 +101,23 @@ func (t *timers) GetClearIntervalFunctionCallback() v8go.FunctionCallback {
 }
 
 func (t *timers) clear(id int32, interval bool) {
-	if id <= 0 {
+	if id < initNextItemID {
 		return
 	}
 
 	if item, ok := t.Items[id]; ok && item.Interval == interval {
-		delete(t.Items, id)
-
 		item.Clear()
 	}
 }
 
-func newTimerItem(args []*v8go.Value, id int32, interval bool) (*internal.Item, error) {
+func (t *timers) newTimerItem(args []*v8go.Value, interval bool) (int32, error) {
 	if len(args) <= 0 {
-		return nil, errors.New("1 argument required, but only 0 present")
+		return 0, errors.New("1 argument required, but only 0 present")
 	}
 
 	fn, err := args[0].AsFunction()
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	var delay int32
@@ -145,15 +137,25 @@ func newTimerItem(args []*v8go.Value, id int32, interval bool) (*internal.Item, 
 	}
 
 	item := &internal.Item{
-		Id:       id,
+		ID:       t.NextItemID,
+		Done:     false,
+		Cleared:  false,
 		Delay:    delay,
 		Interval: interval,
-		Callback: func() {
+		FunctionCB: func() {
 			fn.Call(restArgs...)
+		},
+		ClearCB: func(id int32) {
+			delete(t.Items, id)
 		},
 	}
 
-	return item, nil
+	t.NextItemID++
+	t.Items[item.ID] = item
+
+	item.Start()
+
+	return item.ID, nil
 }
 
 func newInt32Value(ctx *v8go.Context, i int32) *v8go.Value {

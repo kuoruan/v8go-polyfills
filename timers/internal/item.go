@@ -26,22 +26,37 @@ import (
 	"time"
 )
 
-type Callback func()
+type FunctionCallback func()
+
+type ClearCallback func(id int32)
 
 type Item struct {
-	Id       int32
+	ID       int32
 	Done     bool
+	Cleared  bool
 	Interval bool
 	Delay    int32
-	Callback Callback
+
+	ClearCB    ClearCallback
+	FunctionCB FunctionCallback
 }
 
 func (t *Item) Clear() {
+	if !t.Cleared {
+		t.Cleared = true
+
+		if t.ClearCB != nil {
+			t.ClearCB(t.ID)
+		}
+	}
+
 	t.Done = true
 }
 
 func (t *Item) Start() {
 	go func() {
+		defer t.ClearCB(t.ID) // self clear
+
 		for {
 			time.Sleep(time.Duration(t.Delay) * time.Millisecond)
 
@@ -49,7 +64,9 @@ func (t *Item) Start() {
 				break
 			}
 
-			t.Callback()
+			if t.FunctionCB != nil {
+				t.FunctionCB()
+			}
 
 			if !t.Interval {
 				t.Done = true
