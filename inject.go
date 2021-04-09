@@ -27,6 +27,7 @@ import (
 	"go.kuoruan.net/v8go-polyfills/console"
 	"go.kuoruan.net/v8go-polyfills/fetch"
 	"go.kuoruan.net/v8go-polyfills/internal"
+	"go.kuoruan.net/v8go-polyfills/timers"
 	"go.kuoruan.net/v8go-polyfills/url"
 
 	"rogchap.com/v8go"
@@ -54,6 +55,10 @@ func InjectToGlobalObject(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ..
 	}
 
 	if err := base64.InjectTo(iso, global); err != nil {
+		return err
+	}
+
+	if err := timers.InjectTo(iso, global); err != nil {
 		return err
 	}
 
