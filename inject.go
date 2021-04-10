@@ -35,22 +35,15 @@ import (
 
 func InjectToGlobalObject(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ...interface{}) error {
 	var fetchOpts []fetch.Option
-	var consoleOpts []console.Option
 
 	for _, o := range opt {
 		switch t := o.(type) {
 		case fetch.Option:
 			fetchOpts = append(fetchOpts, t)
-		case console.Option:
-			consoleOpts = append(consoleOpts, t)
 		}
 	}
 
 	if err := fetch.InjectTo(iso, global, fetchOpts...); err != nil {
-		return err
-	}
-
-	if err := console.InjectTo(iso, global, consoleOpts...); err != nil {
 		return err
 	}
 
@@ -65,13 +58,26 @@ func InjectToGlobalObject(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ..
 	return nil
 }
 
-func InjectToContext(ctx *v8go.Context) error {
+func InjectToContext(ctx *v8go.Context, opt ...interface{}) error {
+	var consoleOpts []console.Option
+
+	for _, o := range opt {
+		switch t := o.(type) {
+		case console.Option:
+			consoleOpts = append(consoleOpts, t)
+		}
+	}
+
 	for _, p := range []func(*v8go.Context) error{
 		url.InjectTo,
 	} {
 		if err := p(ctx); err != nil {
 			return err
 		}
+	}
+
+	if err := console.InjectTo(ctx, consoleOpts...); err != nil {
+		return err
 	}
 
 	return nil

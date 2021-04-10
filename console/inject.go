@@ -32,24 +32,40 @@ import (
 /**
 Inject basic console.log support.
 */
-func InjectTo(iso *v8go.Isolate, global *v8go.ObjectTemplate, opt ...Option) error {
-	if iso == nil {
+func InjectTo(ctx *v8go.Context, opt ...Option) error {
+	if ctx == nil {
 		return errors.New("v8go-polyfills/console: isolate is required")
 	}
-	if global == nil {
-		return errors.New("v8go-polyfills/console: global is required")
+
+	iso, err := ctx.Isolate()
+	if err != nil {
+		return errors.New("v8go-polyfills/console: isolate is required")
 	}
 
 	c := NewConsole(opt...)
 
-	con, _ := v8go.NewObjectTemplate(iso)
-	logFn, _ := v8go.NewFunctionTemplate(iso, c.GetLogFunctionCallback())
+	con, err := v8go.NewObjectTemplate(iso)
+	if err != nil {
+		return fmt.Errorf("v8go-polyfills/console: %w", err)
+	}
+
+	logFn, err := v8go.NewFunctionTemplate(iso, c.GetLogFunctionCallback())
+	if err != nil {
+		return fmt.Errorf("v8go-polyfills/console: %w", err)
+	}
 
 	if err := con.Set("log", logFn); err != nil {
 		return fmt.Errorf("v8go-polyfills/console: %w", err)
 	}
 
-	if err := global.Set("console", con); err != nil {
+	conObj, err := con.NewInstance(ctx)
+	if err != nil {
+		return fmt.Errorf("v8go-polyfills/console: %w", err)
+	}
+
+	global := ctx.Global()
+
+	if err := global.Set("console", conObj); err != nil {
 		return fmt.Errorf("v8go-polyfills/console: %w", err)
 	}
 
