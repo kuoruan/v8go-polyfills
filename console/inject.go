@@ -34,12 +34,12 @@ Inject basic console.log support.
 */
 func InjectTo(ctx *v8go.Context, opt ...Option) error {
 	if ctx == nil {
-		return errors.New("v8go-polyfills/console: isolate is required")
+		return errors.New("v8go-polyfills/console: ctx is required")
 	}
 
 	iso, err := ctx.Isolate()
 	if err != nil {
-		return errors.New("v8go-polyfills/console: isolate is required")
+		return fmt.Errorf("v8go-polyfills/console: %w", err)
 	}
 
 	c := NewConsole(opt...)
