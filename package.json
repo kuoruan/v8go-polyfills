@@ -1,6 +1,6 @@
 {
   "name": "v8go-polyfills",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "repository": "git@github.com:kuoruan/v8go-polyfills.git",
   "author": "Xingwang Liao <kuoruan@gmail.com>",
   "license": "MIT",
