@@ -6,6 +6,8 @@
 go get -u go.kuoruan.net/v8go-polyfills
 ```
 
+> This module uses Golang [embed](https://golang.org/pkg/embed/), so requires Go version 1.16
+
 ## Polyfill List
 
 * base64: `atob` and `btoa`
