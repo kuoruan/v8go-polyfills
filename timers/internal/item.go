@@ -57,9 +57,10 @@ func (t *Item) Start() {
 	go func() {
 		defer t.Clear() // self clear
 
-		for {
-			time.Sleep(time.Duration(t.Delay) * time.Millisecond)
+		ticker := time.NewTicker(time.Duration(t.Delay) * time.Millisecond)
+		defer ticker.Stop()
 
+		for range ticker.C {
 			if t.Done {
 				break
 			}
