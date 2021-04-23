@@ -54,7 +54,7 @@ func InjectTo(ctx *v8go.Context, opt ...Option) error {
 		return fmt.Errorf("v8go-polyfills/console: %w", err)
 	}
 
-	if err := con.Set("log", logFn); err != nil {
+	if err := con.Set("log", logFn, v8go.ReadOnly); err != nil {
 		return fmt.Errorf("v8go-polyfills/console: %w", err)
 	}
 

@@ -43,7 +43,7 @@ func InjectTo(iso *v8go.Isolate, global *v8go.ObjectTemplate) error {
 			return fmt.Errorf("v8go-polyfills/fetch: %w", err)
 		}
 
-		if err := global.Set(f.Name, fn); err != nil {
+		if err := global.Set(f.Name, fn, v8go.ReadOnly); err != nil {
 			return fmt.Errorf("v8go-polyfills/fetch: %w", err)
 		}
 	}
