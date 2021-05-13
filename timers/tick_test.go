@@ -23,56 +23,17 @@
 package timers
 
 import (
+	"fmt"
 	"testing"
 	"time"
-
-	"go.kuoruan.net/v8go-polyfills/console"
-	"rogchap.com/v8go"
 )
 
-func Test_SetTimeout(t *testing.T) {
-	ctx, err := newV8ContextWithTimers()
-	if err != nil {
-		t.Error(err)
-		return
+func Test_Tick(t *testing.T) {
+	ticker := time.NewTicker(time.Second * 5)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		fmt.Printf("Hello, World!\n")
+		break
 	}
-
-	if err := console.InjectTo(ctx); err != nil {
-		t.Error(err)
-		return
-	}
-
-	val, err := ctx.RunScript(`
-	console.log(new Date().toUTCString());
-
-	setTimeout(function() {
-		console.log("Hello v8go.");
-		console.log(new Date().toUTCString());
-	}, 2000)`, "set_timeout.js")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	if !val.IsInt32() {
-		t.Errorf("except 1 but got %v", val)
-		return
-	}
-
-	if id := val.Int32(); id != 1 {
-		t.Errorf("except 1 but got %d", id)
-	}
-
-	time.Sleep(time.Second * 6)
-}
-
-func newV8ContextWithTimers() (*v8go.Context, error) {
-	iso, _ := v8go.NewIsolate()
-	global, _ := v8go.NewObjectTemplate(iso)
-
-	if err := InjectTo(iso, global); err != nil {
-		return nil, err
-	}
-
-	return v8go.NewContext(iso, global)
 }
