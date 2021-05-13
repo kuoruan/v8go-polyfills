@@ -1,6 +1,2 @@
-rogchap.com/v8go v0.5.2-0.20210410040105-4c18ca58a475 h1:ptaKXbjSWAlGLlK02bscqh5j67G41qTODxQdBHOy0Hs=
-rogchap.com/v8go v0.5.2-0.20210410040105-4c18ca58a475/go.mod h1:IitZnaOtWSJadY/7qinKHIEHpxsilMWyLQ+Efdo4n4I=
-rogchap.com/v8go v0.5.2-0.20210421214600-5e31992d2a99 h1:TR1flTKEhs2GiaexW1ILtwO5/MEXMaC8J44THN0sYME=
-rogchap.com/v8go v0.5.2-0.20210421214600-5e31992d2a99/go.mod h1:IitZnaOtWSJadY/7qinKHIEHpxsilMWyLQ+Efdo4n4I=
-rogchap.com/v8go v0.5.2-0.20210423120543-491864424893 h1:4yu8bXxoh1FkLSp21WRMieH+0xmlkFAczeEUibvQZFQ=
-rogchap.com/v8go v0.5.2-0.20210423120543-491864424893/go.mod h1:IitZnaOtWSJadY/7qinKHIEHpxsilMWyLQ+Efdo4n4I=
+rogchap.com/v8go v0.6.0 h1:wNn5Iu06+ke7HM511zXTVBBpRNYaauyZoPMTrLsGurU=
+rogchap.com/v8go v0.6.0/go.mod h1:IitZnaOtWSJadY/7qinKHIEHpxsilMWyLQ+Efdo4n4I=
