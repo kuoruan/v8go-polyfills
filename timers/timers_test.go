@@ -26,6 +26,7 @@ import (
 	"testing"
 	"time"
 
+	"go.kuoruan.net/v8go-polyfills/console"
 	"rogchap.com/v8go"
 )
 
@@ -36,7 +37,14 @@ func Test_SetTimeout(t *testing.T) {
 		return
 	}
 
-	val, err := ctx.RunScript("setTimeout(function() {}, 2000)", "set_timeout.js")
+	if err := console.InjectTo(ctx); err != nil {
+		t.Error(err)
+		return
+	}
+
+	val, err := ctx.RunScript(`setTimeout(function() {
+		console.log("Hello v8go.");
+	}, 2000)`, "set_timeout.js")
 	if err != nil {
 		t.Error(err)
 		return
