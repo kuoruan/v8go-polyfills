@@ -1,22 +1,23 @@
 {
   "name": "v8go-polyfills",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "repository": "git@github.com:kuoruan/v8go-polyfills.git",
   "author": "Xingwang Liao <kuoruan@gmail.com>",
   "license": "MIT",
+  "type": "module",
   "scripts": {
     "build": "webpack"
   },
   "dependencies": {
-    "core-js-pure": "^3.12.1"
+    "core-js-pure": "^3.20.0"
   },
   "devDependencies": {
-    "eslint": "^7.26.0",
+    "eslint": "^8.4.1",
     "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-prettier": "^3.4.0",
-    "expose-loader": "^2.0.0",
-    "prettier": "^2.3.0",
-    "webpack": "^5.37.0",
-    "webpack-cli": "^4.7.0"
+    "eslint-plugin-prettier": "^4.0.0",
+    "expose-loader": "^3.1.0",
+    "prettier": "^2.5.1",
+    "webpack": "^5.65.0",
+    "webpack-cli": "^4.9.1"
   }
 }

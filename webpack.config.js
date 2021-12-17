@@ -7,10 +7,11 @@ module.exports = {
     url: "./url/js/index.js",
   },
   output: {
+    chunkFormat: "commonjs",
     path: __dirname,
     filename: "[name]/bundle.js",
   },
-  target: "es2020",
+  target: "es2021",
   plugins: [
     new WriteVersionPlugin({
       path: "internal/version.txt",
