@@ -37,22 +37,13 @@ func InjectTo(ctx *v8go.Context, opt ...Option) error {
 		return errors.New("v8go-polyfills/console: ctx is required")
 	}
 
-	iso, err := ctx.Isolate()
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/console: %w", err)
-	}
+	iso := ctx.Isolate()
 
 	c := NewConsole(opt...)
 
-	con, err := v8go.NewObjectTemplate(iso)
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/console: %w", err)
-	}
+	con := v8go.NewObjectTemplate(iso)
 
-	logFn, err := v8go.NewFunctionTemplate(iso, c.GetLogFunctionCallback())
-	if err != nil {
-		return fmt.Errorf("v8go-polyfills/console: %w", err)
-	}
+	logFn := v8go.NewFunctionTemplate(iso, c.GetLogFunctionCallback())
 
 	if err := con.Set("log", logFn, v8go.ReadOnly); err != nil {
 		return fmt.Errorf("v8go-polyfills/console: %w", err)

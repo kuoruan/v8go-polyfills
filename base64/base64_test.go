@@ -36,13 +36,8 @@ func TestAtob(t *testing.T) {
 	}
 
 	val, err := ctx.RunScript("atob()", "atob_undefined.js")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	if s := val.String(); s != "" {
-		t.Errorf("assert '' but got '%s'", s)
+	if err == nil {
+		t.Error("except error but got nil")
 		return
 	}
 
@@ -88,13 +83,8 @@ func TestBtoa(t *testing.T) {
 	}
 
 	val, err := ctx.RunScript("btoa()", "btoa_undefined.js")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	if s := val.String(); s != "" {
-		t.Errorf("assert '' but got '%s'", s)
+	if err == nil {
+		t.Error("except error but got nil")
 		return
 	}
 
@@ -144,12 +134,12 @@ func TestBtoa(t *testing.T) {
 }
 
 func newV8goContext() (*v8go.Context, error) {
-	iso, _ := v8go.NewIsolate()
-	global, _ := v8go.NewObjectTemplate(iso)
+	iso := v8go.NewIsolate()
+	global := v8go.NewObjectTemplate(iso)
 
 	if err := InjectTo(iso, global); err != nil {
 		return nil, err
 	}
 
-	return v8go.NewContext(iso, global)
+	return v8go.NewContext(iso, global), nil
 }

@@ -142,7 +142,7 @@ func (t *timers) startNewTimer(args []*v8go.Value, interval bool) (int32, error)
 		Delay:    delay,
 		Interval: interval,
 		FunctionCB: func() {
-			_, _ = fn.Call(restArgs...)
+			_, _ = fn.Call(restArgs[0], restArgs[1:]...)
 		},
 		ClearCB: func(id int32) {
 			delete(t.Items, id)
@@ -158,7 +158,7 @@ func (t *timers) startNewTimer(args []*v8go.Value, interval bool) (int32, error)
 }
 
 func newInt32Value(ctx *v8go.Context, i int32) *v8go.Value {
-	iso, _ := ctx.Isolate()
+	iso := ctx.Isolate()
 	v, _ := v8go.NewValue(iso, i)
 	return v
 }

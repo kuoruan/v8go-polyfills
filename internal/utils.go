@@ -20,26 +20,23 @@
  * SOFTWARE.
  */
 
-package console
+package internal
 
-import (
-	"os"
-	"testing"
+import "rogchap.com/v8go"
 
-	"rogchap.com/v8go"
-)
+func NewStringValue(ctx *v8go.Context, str string) *v8go.Value {
+	iso := ctx.Isolate()
+	val, _ := v8go.NewValue(iso, str)
+	return val
+}
 
-func TestInject(t *testing.T) {
-	t.Parallel()
+func NewBooleanValue(ctx *v8go.Context, b bool) *v8go.Value {
+	iso := ctx.Isolate()
+	val, _ := v8go.NewValue(iso, b)
+	return val
+}
 
-	iso := v8go.NewIsolate()
-	ctx := v8go.NewContext(iso)
-
-	if err := InjectTo(ctx, WithOutput(os.Stdout)); err != nil {
-		t.Error(err)
-	}
-
-	if _, err := ctx.RunScript("console.log(1111)", ""); err != nil {
-		t.Error(err)
-	}
+func ThrowError(ctx *v8go.Context, err string) {
+	iso := ctx.Isolate()
+	_ = iso.ThrowException(NewStringValue(ctx, err))
 }

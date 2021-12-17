@@ -4,7 +4,6 @@
   "repository": "git@github.com:kuoruan/v8go-polyfills.git",
   "author": "Xingwang Liao <kuoruan@gmail.com>",
   "license": "MIT",
-  "type": "module",
   "scripts": {
     "build": "webpack"
   },

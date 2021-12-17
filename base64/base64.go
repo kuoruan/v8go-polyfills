@@ -25,6 +25,8 @@ package base64
 import (
 	stdBase64 "encoding/base64"
 
+	. "go.kuoruan.net/v8go-polyfills/internal"
+
 	"rogchap.com/v8go"
 )
 
@@ -49,18 +51,19 @@ func (b *base64) GetAtobFunctionCallback() v8go.FunctionCallback {
 		ctx := info.Context()
 
 		if len(args) <= 0 {
-			// TODO: v8go can't throw a error now, so we return an empty string
-			return newStringValue(ctx, "")
+			ThrowError(ctx, "1 argument required, but only 0 present.")
+			return nil
 		}
 
 		encoded := args[0].String()
 
 		byts, err := stdBase64.StdEncoding.DecodeString(encoded)
 		if err != nil {
-			return newStringValue(ctx, "")
+			ThrowError(ctx, err.Error())
+			return nil
 		}
 
-		return newStringValue(ctx, string(byts))
+		return NewStringValue(ctx, string(byts))
 	}
 }
 
@@ -73,18 +76,13 @@ func (b *base64) GetBtoaFunctionCallback() v8go.FunctionCallback {
 		ctx := info.Context()
 
 		if len(args) <= 0 {
-			return newStringValue(ctx, "")
+			ThrowError(ctx, "1 argument required, but only 0 present.")
+			return nil
 		}
 
 		str := args[0].String()
 
 		encoded := stdBase64.StdEncoding.EncodeToString([]byte(str))
-		return newStringValue(ctx, encoded)
+		return NewStringValue(ctx, encoded)
 	}
-}
-
-func newStringValue(ctx *v8go.Context, str string) *v8go.Value {
-	iso, _ := ctx.Isolate()
-	val, _ := v8go.NewValue(iso, str)
-	return val
 }

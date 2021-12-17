@@ -48,7 +48,12 @@ var defaultLocalHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.R
 	http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
 })
 
+/**
+The default useragent provider provides the default useragent
+If the request is a local request
+*/
 var defaultUserAgentProvider = UserAgentProviderFunc(func(u *url.URL) string {
+	// request is a internal request
 	if !u.IsAbs() {
 		return UserAgentLocal
 	}
@@ -95,34 +100,33 @@ func (f *fetcher) GetFetchFunctionCallback() v8go.FunctionCallback {
 
 		resolver, _ := v8go.NewPromiseResolver(ctx)
 
-		go func() {
-			if len(args) <= 0 {
-				err := errors.New("1 argument required, but only 0 present")
-				resolver.Reject(newErrorValue(ctx, err))
-				return
-			}
+		if len(args) <= 0 {
+			resolver.Reject(NewStringValue(ctx, "1 argument required, but only 0 present"))
+			return nil
+		}
 
-			var reqInit internal.RequestInit
-			if len(args) > 1 {
-				str, err := v8go.JSONStringify(ctx, args[1])
-				if err != nil {
-					resolver.Reject(newErrorValue(ctx, err))
-					return
-				}
-
-				reader := strings.NewReader(str)
-				if err := json.NewDecoder(reader).Decode(&reqInit); err != nil {
-					resolver.Reject(newErrorValue(ctx, err))
-					return
-				}
-			}
-
-			r, err := f.initRequest(args[0].String(), reqInit)
+		var reqInit internal.RequestInit
+		if len(args) > 1 {
+			str, err := v8go.JSONStringify(ctx, args[1])
 			if err != nil {
-				resolver.Reject(newErrorValue(ctx, err))
-				return
+				resolver.Reject(NewStringValue(ctx, err.Error()))
+				return nil
 			}
 
+			reader := strings.NewReader(str)
+			if err := json.NewDecoder(reader).Decode(&reqInit); err != nil {
+				resolver.Reject(NewStringValue(ctx, err.Error()))
+				return nil
+			}
+		}
+
+		r, err := f.initRequest(args[0].String(), reqInit)
+		if err != nil {
+			resolver.Reject(NewStringValue(ctx, err.Error()))
+			return nil
+		}
+
+		go func() {
 			var res *internal.Response
 
 			// do local request
@@ -132,13 +136,13 @@ func (f *fetcher) GetFetchFunctionCallback() v8go.FunctionCallback {
 				res, err = f.fetchRemote(r)
 			}
 			if err != nil {
-				resolver.Reject(newErrorValue(ctx, err))
+				resolver.Reject(NewStringValue(ctx, err.Error()))
 				return
 			}
 
 			resObj, err := newResponseObject(ctx, res)
 			if err != nil {
-				resolver.Reject(newErrorValue(ctx, err))
+				resolver.Reject(NewStringValue(ctx, err.Error()))
 				return
 			}
 
@@ -265,54 +269,42 @@ func (f *fetcher) fetchRemote(r *internal.Request) (*internal.Response, error) {
 }
 
 func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object, error) {
-	iso, _ := ctx.Isolate()
+	iso := ctx.Isolate()
 
 	headers, err := newHeadersObject(ctx, res.Header)
 	if err != nil {
 		return nil, err
 	}
 
-	textFnTmp, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
-		ctx := info.Context()
-		resolver, _ := v8go.NewPromiseResolver(ctx)
-
-		go func() {
-			v, _ := v8go.NewValue(iso, res.Body)
-			resolver.Resolve(v)
-		}()
-
-		return resolver.GetPromise().Value
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	jsonFnTmp, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
+	// https://developer.mozilla.org/en-US/docs/Web/API/Response/text
+	textFnTmp := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
 
 		resolver, _ := v8go.NewPromiseResolver(ctx)
 
-		go func() {
-			val, err := v8go.JSONParse(ctx, res.Body)
-			if err != nil {
-				rejectVal, _ := v8go.NewValue(iso, err.Error())
-				resolver.Reject(rejectVal)
-				return
-			}
-
-			resolver.Resolve(val)
-		}()
+		resolver.Resolve(NewStringValue(ctx, res.Body))
 
 		return resolver.GetPromise().Value
 	})
-	if err != nil {
-		return nil, err
-	}
 
-	resTmp, err := v8go.NewObjectTemplate(iso)
-	if err != nil {
-		return nil, err
-	}
+	// https://developer.mozilla.org/en-US/docs/Web/API/Response/json
+	jsonFnTmp := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
+		ctx := info.Context()
+
+		resolver, _ := v8go.NewPromiseResolver(ctx)
+
+		val, err := v8go.JSONParse(ctx, res.Body)
+		if err != nil {
+			resolver.Reject(NewStringValue(ctx, err.Error()))
+			return nil
+		}
+
+		resolver.Resolve(val)
+
+		return resolver.GetPromise().Value
+	})
+
+	resTmp := v8go.NewObjectTemplate(iso)
 
 	for _, f := range []struct {
 		Name string
@@ -352,47 +344,37 @@ func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object,
 }
 
 func newHeadersObject(ctx *v8go.Context, h http.Header) (*v8go.Object, error) {
-	iso, _ := ctx.Isolate()
+	iso := ctx.Isolate()
 
 	// https://developer.mozilla.org/en-US/docs/Web/API/Headers/get
-	getFnTmp, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
+	getFnTmp := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		args := info.Args()
+
 		if len(args) <= 0 {
-			// TODO: this should return an error, but v8go not supported now
-			val, _ := v8go.NewValue(iso, "")
-			return val
+			ThrowError(ctx, "1 argument required, but only 0 present.")
+			return nil
 		}
 
 		key := http.CanonicalHeaderKey(args[0].String())
-		val, _ := v8go.NewValue(iso, h.Get(key))
-		return val
+		return NewStringValue(ctx, h.Get(key))
 	})
-	if err != nil {
-		return nil, err
-	}
 
 	// https://developer.mozilla.org/en-US/docs/Web/API/Headers/has
-	hasFnTmp, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
+	hasFnTmp := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		args := info.Args()
 		if len(args) <= 0 {
-			val, _ := v8go.NewValue(iso, false)
-			return val
+			ThrowError(ctx, "1 argument required, but only 0 present.")
+			return nil
 		}
 		key := http.CanonicalHeaderKey(args[0].String())
 
-		val, _ := v8go.NewValue(iso, h.Get(key) != "")
-		return val
+		_, ok := h[key]
+		return NewBooleanValue(ctx, ok)
 	})
-	if err != nil {
-		return nil, err
-	}
 
 	// create a header template,
 	// TODO: if v8go supports Map in the future, change this to a Map Object
-	headersTmp, err := v8go.NewObjectTemplate(iso)
-	if err != nil {
-		return nil, err
-	}
+	headersTmp := v8go.NewObjectTemplate(iso)
 
 	for _, f := range []struct {
 		Name string
@@ -424,14 +406,6 @@ func newHeadersObject(ctx *v8go.Context, h http.Header) (*v8go.Object, error) {
 	}
 
 	return headers, nil
-}
-
-// v8go currently not support reject a *v8go.Object,
-// so we should new *v8go.Value here
-func newErrorValue(ctx *v8go.Context, err error) *v8go.Value {
-	iso, _ := ctx.Isolate()
-	e, _ := v8go.NewValue(iso, fmt.Sprintf("fetch: %v", err))
-	return e
 }
 
 func UserAgent() string {
