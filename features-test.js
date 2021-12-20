@@ -63,6 +63,7 @@ console.log("WeakSet:", typeof WeakSet !== "undefined");
 
 console.log("--- Structured data ---");
 console.log("ArrayBuffer      :", typeof ArrayBuffer !== "undefined");
+console.log("Buffer           :", typeof Buffer !== "undefined");
 console.log("SharedArrayBuffer:", typeof SharedArrayBuffer !== "undefined");
 console.log("Atomics          :", typeof Atomics !== "undefined");
 console.log("DataView         :", typeof DataView !== "undefined");

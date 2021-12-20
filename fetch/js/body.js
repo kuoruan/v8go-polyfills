@@ -1,6 +1,3 @@
-import FormData from "./FormData";
-import Blob from "./Blob";
-
 export default class Body {
   #bodyInit;
   #options;
@@ -18,13 +15,15 @@ export default class Body {
       this.#bodyText = "";
     } else if (typeof body === "string") {
       this.#bodyText = body;
+      /* global Blob */
     } else if (body instanceof Blob) {
       this.#bodyBlob = body;
       this.#options = options;
+      /* global FormData */
     } else if (body instanceof FormData) {
       this.#bodyFormData = body;
     } else {
-      throw new TypeError("unsupported BodyInit type");
+      throw new TypeError("unsupported body type");
     }
   }
 

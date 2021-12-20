@@ -19,6 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+import URL from "core-js-pure/web/url";
+import URLSearchParams from "core-js-pure/web/url-search-params";
 
-import "expose-loader?exposes=URLSearchParams!core-js-pure/web/url-search-params";
-import "expose-loader?exposes=URL!core-js-pure/web/url";
+export { URL, URLSearchParams };
