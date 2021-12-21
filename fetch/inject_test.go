@@ -33,19 +33,15 @@ import (
 func TestInjectTo(t *testing.T) {
 	t.Parallel()
 
-	iso, _ := v8go.NewIsolate()
-	global, _ := v8go.NewObjectTemplate(iso)
+	iso := v8go.NewIsolate()
+	global := v8go.NewObjectTemplate(iso)
 
 	if err := InjectTo(iso, global); err != nil {
 		t.Errorf("error when inject fetch polyfill, %s", err)
 		return
 	}
 
-	ctx, err := v8go.NewContext(iso, global)
-	if err != nil {
-		t.Errorf("create context failed: %s", err)
-		return
-	}
+	ctx := v8go.NewContext(iso, global)
 
 	val, err := ctx.RunScript("fetch('https://www.example.com')", "fetch_example.js")
 	if err != nil {

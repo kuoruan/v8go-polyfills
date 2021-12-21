@@ -32,8 +32,8 @@ import (
 func TestInject(t *testing.T) {
 	t.Parallel()
 
-	iso, _ := v8go.NewIsolate()
-	ctx, _ := v8go.NewContext(iso)
+	iso := v8go.NewIsolate()
+	ctx := v8go.NewContext(iso)
 
 	if err := InjectTo(ctx, WithOutput(os.Stdout)); err != nil {
 		t.Error(err)

@@ -107,9 +107,9 @@ func TestFetchJSON(t *testing.T) {
 func TestHeaders(t *testing.T) {
 	t.Parallel()
 
-	iso, _ := v8go.NewIsolate()
+	iso := v8go.NewIsolate()
 
-	ctx, _ := v8go.NewContext(iso)
+	ctx := v8go.NewContext(iso)
 
 	obj, err := newHeadersObject(ctx, http.Header{
 		"AA": []string{"aa"},
@@ -144,12 +144,12 @@ func TestHeaders(t *testing.T) {
 }
 
 func newV8ContextWithFetch(opt ...Option) (*v8go.Context, error) {
-	iso, _ := v8go.NewIsolate()
-	global, _ := v8go.NewObjectTemplate(iso)
+	iso := v8go.NewIsolate()
+	global := v8go.NewObjectTemplate(iso)
 
 	if err := InjectTo(iso, global, opt...); err != nil {
 		return nil, err
 	}
 
-	return v8go.NewContext(iso, global)
+	return v8go.NewContext(iso, global), nil
 }

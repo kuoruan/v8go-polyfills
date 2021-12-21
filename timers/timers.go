@@ -55,7 +55,7 @@ func (t *timers) GetSetTimeoutFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
 
-		id, err := t.startNewTimer(info.Args(), false)
+		id, err := t.startNewTimer(info.This(), info.Args(), false)
 		if err != nil {
 			return newInt32Value(ctx, 0)
 		}
@@ -68,7 +68,7 @@ func (t *timers) GetSetIntervalFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
 
-		id, err := t.startNewTimer(info.Args(), true)
+		id, err := t.startNewTimer(info.This(), info.Args(), true)
 		if err != nil {
 			return newInt32Value(ctx, 0)
 		}
@@ -109,7 +109,7 @@ func (t *timers) clear(id int32, interval bool) {
 	}
 }
 
-func (t *timers) startNewTimer(args []*v8go.Value, interval bool) (int32, error) {
+func (t *timers) startNewTimer(this v8go.Valuer, args []*v8go.Value, interval bool) (int32, error) {
 	if len(args) <= 0 {
 		return 0, errors.New("1 argument required, but only 0 present")
 	}
@@ -142,7 +142,7 @@ func (t *timers) startNewTimer(args []*v8go.Value, interval bool) (int32, error)
 		Delay:    delay,
 		Interval: interval,
 		FunctionCB: func() {
-			_, _ = fn.Call(restArgs...)
+			_, _ = fn.Call(this, restArgs...)
 		},
 		ClearCB: func(id int32) {
 			delete(t.Items, id)
@@ -158,7 +158,7 @@ func (t *timers) startNewTimer(args []*v8go.Value, interval bool) (int32, error)
 }
 
 func newInt32Value(ctx *v8go.Context, i int32) *v8go.Value {
-	iso, _ := ctx.Isolate()
+	iso := ctx.Isolate()
 	v, _ := v8go.NewValue(iso, i)
 	return v
 }

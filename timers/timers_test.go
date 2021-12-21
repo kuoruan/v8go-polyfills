@@ -67,12 +67,12 @@ func Test_SetTimeout(t *testing.T) {
 }
 
 func newV8ContextWithTimers() (*v8go.Context, error) {
-	iso, _ := v8go.NewIsolate()
-	global, _ := v8go.NewObjectTemplate(iso)
+	iso := v8go.NewIsolate()
+	global := v8go.NewObjectTemplate(iso)
 
 	if err := InjectTo(iso, global); err != nil {
 		return nil, err
 	}
 
-	return v8go.NewContext(iso, global)
+	return v8go.NewContext(iso, global), nil
 }

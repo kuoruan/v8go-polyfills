@@ -32,14 +32,14 @@ import (
 )
 
 func main() {
-	iso, _ := v8go.NewIsolate()
-	global, _ := v8go.NewObjectTemplate(iso)
+	iso := v8go.NewIsolate()
+	global := v8go.NewObjectTemplate(iso)
 
 	if err := fetch.InjectTo(iso, global); err != nil {
 		panic(err)
 	}
 
-	ctx, _ := v8go.NewContext(iso, global)
+	ctx := v8go.NewContext(iso, global)
 
 	val, err := ctx.RunScript("fetch('https://www.example.com').then(res => res.text())", "fetch.js")
 	if err != nil {

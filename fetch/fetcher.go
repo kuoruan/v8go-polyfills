@@ -265,14 +265,14 @@ func (f *fetcher) fetchRemote(r *internal.Request) (*internal.Response, error) {
 }
 
 func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object, error) {
-	iso, _ := ctx.Isolate()
+	iso := ctx.Isolate()
 
 	headers, err := newHeadersObject(ctx, res.Header)
 	if err != nil {
 		return nil, err
 	}
 
-	textFnTmp, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
+	textFnTmp := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
 		resolver, _ := v8go.NewPromiseResolver(ctx)
 
@@ -287,7 +287,7 @@ func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object,
 		return nil, err
 	}
 
-	jsonFnTmp, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
+	jsonFnTmp := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
 
 		resolver, _ := v8go.NewPromiseResolver(ctx)
@@ -309,10 +309,7 @@ func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object,
 		return nil, err
 	}
 
-	resTmp, err := v8go.NewObjectTemplate(iso)
-	if err != nil {
-		return nil, err
-	}
+	resTmp := v8go.NewObjectTemplate(iso)
 
 	for _, f := range []struct {
 		Name string
@@ -352,10 +349,10 @@ func newResponseObject(ctx *v8go.Context, res *internal.Response) (*v8go.Object,
 }
 
 func newHeadersObject(ctx *v8go.Context, h http.Header) (*v8go.Object, error) {
-	iso, _ := ctx.Isolate()
+	iso := ctx.Isolate()
 
 	// https://developer.mozilla.org/en-US/docs/Web/API/Headers/get
-	getFnTmp, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
+	getFnTmp := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		args := info.Args()
 		if len(args) <= 0 {
 			// TODO: this should return an error, but v8go not supported now
@@ -367,12 +364,9 @@ func newHeadersObject(ctx *v8go.Context, h http.Header) (*v8go.Object, error) {
 		val, _ := v8go.NewValue(iso, h.Get(key))
 		return val
 	})
-	if err != nil {
-		return nil, err
-	}
 
 	// https://developer.mozilla.org/en-US/docs/Web/API/Headers/has
-	hasFnTmp, err := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
+	hasFnTmp := v8go.NewFunctionTemplate(iso, func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		args := info.Args()
 		if len(args) <= 0 {
 			val, _ := v8go.NewValue(iso, false)
@@ -383,16 +377,10 @@ func newHeadersObject(ctx *v8go.Context, h http.Header) (*v8go.Object, error) {
 		val, _ := v8go.NewValue(iso, h.Get(key) != "")
 		return val
 	})
-	if err != nil {
-		return nil, err
-	}
 
 	// create a header template,
 	// TODO: if v8go supports Map in the future, change this to a Map Object
-	headersTmp, err := v8go.NewObjectTemplate(iso)
-	if err != nil {
-		return nil, err
-	}
+	headersTmp := v8go.NewObjectTemplate(iso)
 
 	for _, f := range []struct {
 		Name string
@@ -429,7 +417,7 @@ func newHeadersObject(ctx *v8go.Context, h http.Header) (*v8go.Object, error) {
 // v8go currently not support reject a *v8go.Object,
 // so we should new *v8go.Value here
 func newErrorValue(ctx *v8go.Context, err error) *v8go.Value {
-	iso, _ := ctx.Isolate()
+	iso := ctx.Isolate()
 	e, _ := v8go.NewValue(iso, fmt.Sprintf("fetch: %v", err))
 	return e
 }
