@@ -30,14 +30,14 @@ import (
 )
 
 func main() {
-	iso, _ := v8go.NewIsolate()
-	global, _ := v8go.NewObjectTemplate(iso)
+	iso := v8go.NewIsolate()
+	global := v8go.NewObjectTemplate(iso)
 
 	if err := base64.InjectTo(iso, global); err != nil {
 		panic(err)
 	}
 
-	ctx, _ := v8go.NewContext(iso, global)
+	ctx := v8go.NewContext(iso, global)
 
 	val, err := ctx.RunScript("btoa('Hello, world!')", "btoa.js")
 	if err != nil {

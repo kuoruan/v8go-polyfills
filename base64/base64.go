@@ -84,7 +84,7 @@ func (b *base64) GetBtoaFunctionCallback() v8go.FunctionCallback {
 }
 
 func newStringValue(ctx *v8go.Context, str string) *v8go.Value {
-	iso, _ := ctx.Isolate()
+	iso := ctx.Isolate()
 	val, _ := v8go.NewValue(iso, str)
 	return val
 }

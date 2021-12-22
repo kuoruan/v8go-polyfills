@@ -31,17 +31,14 @@ import (
 )
 
 func main() {
-	iso, _ := v8go.NewIsolate()
-	global, _ := v8go.NewObjectTemplate(iso)
+	iso := v8go.NewIsolate()
+	global := v8go.NewObjectTemplate(iso)
 
 	if err := timers.InjectTo(iso, global); err != nil {
 		panic(err)
 	}
 
-	ctx, err := v8go.NewContext(iso, global)
-	if err != nil {
-		panic(err)
-	}
+	ctx := v8go.NewContext(iso, global)
 
 	val, err := ctx.RunScript(
 		"new Promise((resolve) => setTimeout(function(name) {resolve(`Hello, ${name}!`)}, 1000, 'Tom'))",

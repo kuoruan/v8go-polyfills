@@ -28,8 +28,8 @@ import (
 )
 
 func main() {
-	iso, _ := v8go.NewIsolate()
-	ctx, _ := v8go.NewContext(iso)
+	iso := v8go.NewIsolate()
+	ctx := v8go.NewContext(iso)
 
 	if err := console.InjectTo(ctx); err != nil {
 		panic(err)
