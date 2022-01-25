@@ -21,13 +21,19 @@ export default class Body {
       this.#options = options;
       /* global FormData */
     } else if (body instanceof FormData) {
-      this.#bodyFormData = body;
+      this.#bodyFormData = body["_blob"]();
     } else {
       throw new TypeError("unsupported body type");
     }
   }
 
   async blob() {
+    if (this.bodyUsed) {
+      return Promise.reject(new TypeError("Already read"));
+    }
+
+    this.bodyUsed = true;
+
     if (this.#bodyBlob) {
       return this.#bodyBlob;
     } else if (this.#bodyFormData) {
@@ -38,8 +44,14 @@ export default class Body {
   }
 
   async text() {
+    if (this.bodyUsed) {
+      return Promise.reject(new TypeError("Already read"));
+    }
+
+    this.bodyUsed = true;
+
     if (this.#bodyBlob) {
-      return readBlobAsText(this._bodyBlob, this._options);
+      return readBlobAsText(this.#bodyBlob, this.#options);
     } else if (this.#bodyFormData) {
       throw new Error("could not read FormData body as text");
     } else {

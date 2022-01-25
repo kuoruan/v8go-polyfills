@@ -17,17 +17,8 @@ export default class File extends Blob {
     }
     super(fileBits, options);
 
-    if (options === null) options = {};
-
     // Simulate WebIDL type casting for NaN value in lastModified option.
-    const lastModified =
-      options.lastModified === undefined
-        ? Date.now()
-        : Number(options.lastModified);
-    if (!Number.isNaN(lastModified)) {
-      this.#lastModified = lastModified;
-    }
-
+    this.#lastModified = Number(options?.lastModified) || Date.now();
     this.#name = String(fileName);
   }
 
@@ -37,6 +28,14 @@ export default class File extends Blob {
 
   get lastModified() {
     return this.#lastModified;
+  }
+
+  /**
+   * The path the URL of the File is relative to.
+   * @type {string}
+   */
+  get webkitRelativePath() {
+    return "";
   }
 
   get [Symbol.toStringTag]() {

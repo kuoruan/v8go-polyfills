@@ -72,8 +72,6 @@ export default class Blob {
       );
     }
 
-    if (options === null) options = {};
-
     const encoder = new TextEncoder();
     for (const element of blobParts) {
       let part;
@@ -96,7 +94,7 @@ export default class Blob {
       this.#parts.push(part);
     }
 
-    const type = options.type === undefined ? "" : String(options.type);
+    const type = options?.type === undefined ? "" : String(options.type);
 
     this.#type = /^[\x20-\x7E]*$/.test(type) ? type : "";
   }

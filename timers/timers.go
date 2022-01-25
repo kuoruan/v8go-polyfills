@@ -27,6 +27,8 @@ import (
 
 	"go.kuoruan.net/v8go-polyfills/timers/internal"
 	"rogchap.com/v8go"
+
+	. "go.kuoruan.net/v8go-polyfills/internal"
 )
 
 type Timers interface {
@@ -57,10 +59,11 @@ func (t *timers) GetSetTimeoutFunctionCallback() v8go.FunctionCallback {
 
 		id, err := t.startNewTimer(info.Args(), false)
 		if err != nil {
-			return newInt32Value(ctx, 0)
+			ThrowError(ctx, err.Error())
+			return nil
 		}
 
-		return newInt32Value(ctx, id)
+		return NewInt32Value(ctx, id)
 	}
 }
 
@@ -70,10 +73,11 @@ func (t *timers) GetSetIntervalFunctionCallback() v8go.FunctionCallback {
 
 		id, err := t.startNewTimer(info.Args(), true)
 		if err != nil {
-			return newInt32Value(ctx, 0)
+			ThrowError(ctx, err.Error())
+			return nil
 		}
 
-		return newInt32Value(ctx, id)
+		return NewInt32Value(ctx, id)
 	}
 }
 
@@ -155,10 +159,4 @@ func (t *timers) startNewTimer(args []*v8go.Value, interval bool) (int32, error)
 	item.Start()
 
 	return item.ID, nil
-}
-
-func newInt32Value(ctx *v8go.Context, i int32) *v8go.Value {
-	iso := ctx.Isolate()
-	v, _ := v8go.NewValue(iso, i)
-	return v
 }

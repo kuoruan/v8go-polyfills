@@ -36,6 +36,12 @@ func NewBooleanValue(ctx *v8go.Context, b bool) *v8go.Value {
 	return val
 }
 
+func NewInt32Value(ctx *v8go.Context, i int32) *v8go.Value {
+	iso := ctx.Isolate()
+	v, _ := v8go.NewValue(iso, i)
+	return v
+}
+
 func ThrowError(ctx *v8go.Context, err string) {
 	iso := ctx.Isolate()
 	_ = iso.ThrowException(NewStringValue(ctx, err))
