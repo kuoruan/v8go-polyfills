@@ -29,24 +29,58 @@ import (
 	"rogchap.com/v8go"
 )
 
-/**
-Inject basic console.log support.
-*/
+// InjectTo injects basic console.log support.
+//
+// Warning: This method overwrites the previous console object.
+// To add more than one console.foo method, use InjectMultipleTo.
 func InjectTo(ctx *v8go.Context, opt ...Option) error {
 	if ctx == nil {
 		return errors.New("v8go-polyfills/console: ctx is required")
 	}
 
+	consoleMethod := NewConsole(opt...).(*consoleMethod)
+
 	iso := ctx.Isolate()
-
-	c := NewConsole(opt...)
-
 	con := v8go.NewObjectTemplate(iso)
 
-	logFn := v8go.NewFunctionTemplate(iso, c.GetLogFunctionCallback())
+	logFn := v8go.NewFunctionTemplate(iso, consoleMethod.GetLogFunctionCallback())
 
-	if err := con.Set("log", logFn, v8go.ReadOnly); err != nil {
+	if err := con.Set(consoleMethod.MethodName, logFn, v8go.ReadOnly); err != nil {
 		return fmt.Errorf("v8go-polyfills/console: %w", err)
+	}
+
+	conObj, err := con.NewInstance(ctx)
+	if err != nil {
+		return fmt.Errorf("v8go-polyfills/console: %w", err)
+	}
+
+	global := ctx.Global()
+
+	if err := global.Set("console", conObj); err != nil {
+		return fmt.Errorf("v8go-polyfills/console: %w", err)
+	}
+
+	return nil
+}
+
+// InjectMultipleTo injects one or more console methods to a global object of a context.
+//
+// Implementing the Console interface will not work in this case.
+func InjectMultipleTo(ctx *v8go.Context, consoles ...Console) error {
+	if ctx == nil {
+		return errors.New("v8go-polyfills/console: ctx is required")
+	}
+
+	iso := ctx.Isolate()
+	con := v8go.NewObjectTemplate(iso)
+
+	for _, console := range consoles {
+		consoleMethod := console.(*consoleMethod)
+
+		logFn := v8go.NewFunctionTemplate(iso, consoleMethod.GetLogFunctionCallback())
+		if err := con.Set(consoleMethod.MethodName, logFn, v8go.ReadOnly); err != nil {
+			return fmt.Errorf("v8go-polyfills/console: %w", err)
+		}
 	}
 
 	conObj, err := con.NewInstance(ctx)

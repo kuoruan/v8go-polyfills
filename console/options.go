@@ -27,17 +27,25 @@ import (
 )
 
 type Option interface {
-	apply(c *console)
+	apply(c *consoleMethod)
 }
 
-type optionFunc func(c *console)
+type optionFunc func(c *consoleMethod)
 
-func (f optionFunc) apply(c *console) {
+func (f optionFunc) apply(c *consoleMethod) {
 	f(c)
 }
 
+// WithOutput sets the output for this console method. Default os.Stdout.
 func WithOutput(output io.Writer) Option {
-	return optionFunc(func(c *console) {
+	return optionFunc(func(c *consoleMethod) {
 		c.Output = output
+	})
+}
+
+// WithMethodName sets the method name for this console method. Default "log".
+func WithMethodName(methodName string) Option {
+	return optionFunc(func(c *consoleMethod) {
+		c.MethodName = methodName
 	})
 }

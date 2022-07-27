@@ -30,17 +30,27 @@ import (
 	"rogchap.com/v8go"
 )
 
+// Console is a single console *method*.
+//
+// This can hardly be called a console, the name is kept for backwords compatability.
 type Console interface {
 	GetLogFunctionCallback() v8go.FunctionCallback
 }
 
-type console struct {
+type consoleMethod struct {
 	Output io.Writer
+	// Method name on the console object, eg. "log", "error"
+	MethodName string
 }
 
+// NewConsole creates a new console method.
+//
+// InjectTo() calls this under the hood, so its best to use that instead
+// if you only want console.log to be available, otherwise use InjectMultipleTo().
 func NewConsole(opt ...Option) Console {
-	c := &console{
-		Output: os.Stdout,
+	c := &consoleMethod{
+		Output:     os.Stdout,
+		MethodName: "log",
 	}
 
 	for _, o := range opt {
@@ -50,7 +60,7 @@ func NewConsole(opt ...Option) Console {
 	return c
 }
 
-func (c *console) GetLogFunctionCallback() v8go.FunctionCallback {
+func (c *consoleMethod) GetLogFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		if args := info.Args(); len(args) > 0 {
 			inputs := make([]interface{}, len(args))
