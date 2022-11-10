@@ -23,6 +23,7 @@
 package timers
 
 import (
+	"context"
 	"errors"
 
 	"go.kuoruan.net/v8go-polyfills/timers/internal"
@@ -40,14 +41,16 @@ type Timers interface {
 type timers struct {
 	Items      map[int32]*internal.Item
 	NextItemID int32
+	ctx        context.Context
 }
 
 const initNextItemID = 1
 
-func NewTimers() Timers {
+func NewTimers(ctx context.Context) Timers {
 	return &timers{
 		Items:      make(map[int32]*internal.Item),
 		NextItemID: initNextItemID,
+		ctx:        ctx,
 	}
 }
 
@@ -55,7 +58,7 @@ func (t *timers) GetSetTimeoutFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
 
-		id, err := t.startNewTimer(info.This(), info.Args(), false)
+		id, err := t.startNewTimer(t.ctx, info.This(), info.Args(), false)
 		if err != nil {
 			return newInt32Value(ctx, 0)
 		}
@@ -68,7 +71,7 @@ func (t *timers) GetSetIntervalFunctionCallback() v8go.FunctionCallback {
 	return func(info *v8go.FunctionCallbackInfo) *v8go.Value {
 		ctx := info.Context()
 
-		id, err := t.startNewTimer(info.This(), info.Args(), true)
+		id, err := t.startNewTimer(t.ctx, info.This(), info.Args(), true)
 		if err != nil {
 			return newInt32Value(ctx, 0)
 		}
@@ -109,7 +112,7 @@ func (t *timers) clear(id int32, interval bool) {
 	}
 }
 
-func (t *timers) startNewTimer(this v8go.Valuer, args []*v8go.Value, interval bool) (int32, error) {
+func (t *timers) startNewTimer(ctx context.Context, this v8go.Valuer, args []*v8go.Value, interval bool) (int32, error) {
 	if len(args) <= 0 {
 		return 0, errors.New("1 argument required, but only 0 present")
 	}
@@ -152,7 +155,7 @@ func (t *timers) startNewTimer(this v8go.Valuer, args []*v8go.Value, interval bo
 	t.NextItemID++
 	t.Items[item.ID] = item
 
-	item.Start()
+	item.Start(ctx)
 
 	return item.ID, nil
 }

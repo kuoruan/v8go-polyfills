@@ -23,13 +23,14 @@
 package timers
 
 import (
+	"context"
 	"fmt"
 
 	"rogchap.com/v8go"
 )
 
-func InjectTo(iso *v8go.Isolate, global *v8go.ObjectTemplate) error {
-	t := NewTimers()
+func InjectTo(ctx context.Context, iso *v8go.Isolate, global *v8go.ObjectTemplate) error {
+	t := NewTimers(ctx)
 
 	for _, f := range []struct {
 		Name string
