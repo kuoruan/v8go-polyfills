@@ -23,6 +23,7 @@
 package internal
 
 import (
+	"context"
 	"time"
 )
 
@@ -53,25 +54,30 @@ func (t *Item) Clear() {
 	t.Done = true
 }
 
-func (t *Item) Start() {
+func (t *Item) Start(ctx context.Context) {
 	go func() {
 		defer t.Clear() // self clear
 
 		ticker := time.NewTicker(time.Duration(t.Delay) * time.Millisecond)
 		defer ticker.Stop()
 
-		for range ticker.C {
-			if t.Done {
-				break
-			}
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				if t.Done {
+					return
+				}
 
-			if t.FunctionCB != nil {
-				t.FunctionCB()
-			}
+				if t.FunctionCB != nil {
+					t.FunctionCB()
+				}
 
-			if !t.Interval {
-				t.Done = true
-				break
+				if !t.Interval {
+					t.Done = true
+					return
+				}
 			}
 		}
 	}()
